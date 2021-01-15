@@ -1,6 +1,7 @@
 @Library('dst-shared@master') _
 
 dockerBuildPipeline {
+        githubPushRepo = "Cray-HPE/hms-certs"
         repository = "cray"
         imagePrefix = "hms"
         app = "hms-certs"
