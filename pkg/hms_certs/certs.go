@@ -1,4 +1,25 @@
-// Copyright 2020 Hewlett Packard Enterprise Development LP
+// MIT License
+// 
+// (C) Copyright [2020-2021] Hewlett Packard Enterprise Development LP
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+// OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+
 
 package hms_certs
 
@@ -180,6 +201,7 @@ var __httpClient *http.Client
 var __vaultEnabled = true
 var cbmap  = make(map[string]bool)
 var vstore = make(map[string]VaultCertData)
+var instName string
 
 
 // Initialize the certs package.  This pretty much just sets up the logging.
@@ -198,6 +220,11 @@ func Init(loggerP *logrus.Logger) {
 	if ((ven == "0") || (strings.ToLower(ven) == "false")) {
 		__vaultEnabled = false
 	}
+}
+
+func InitInstance(loggerP *logrus.Logger, inst string) {
+	instName = inst
+	Init(loggerP)
 }
 
 func seclog_Errorf(fmt string, args ...interface{}) {
@@ -347,6 +374,7 @@ func getVaultToken() (string,error) {
 		return "", fmt.Errorf("ERROR creating a new request for kubernetes/login: %v",
 			reqerr)
 	}
+	base.SetHTTPUserAgent(req,instName)
 	defer req.Body.Close()
 	rsp,rsperr := client.Do(req)
 	if (rsperr != nil) {
@@ -480,6 +508,7 @@ func createTargCerts(reqData *vaultCertReq, vaultToken string,
 		return fmt.Errorf("ERROR creating req for vault cert data: %v",
 			reqerr)
 	}
+	base.SetHTTPUserAgent(req,instName)
 	req.Header.Set("X-Vault-Token",vaultToken)
 	rsp,rsperr := client.Do(req)
 	if (rsperr != nil) {
@@ -704,6 +733,7 @@ func FetchCAChain(uri string) (string,error) {
 			return "",fmt.Errorf("ERROR creating req for vault ca chain: %v",
 				reqerr)
 		}
+		base.SetHTTPUserAgent(req,instName)
 		req.Header.Set("X-Vault-Token",vaultToken)
 		rsp,rsperr := client.Do(req)
 		if (rsperr != nil) {
@@ -1055,6 +1085,7 @@ func (p *HTTPClientPair) Do(req *http.Request) (*http.Response,error) {
 		return rsp,fmt.Errorf("%s: Can't create retryable HTTP request: %v",
 					funcName,rtErr)
 	}
+	base.SetHTTPUserAgent(rtReq.Request,instName)
 	p.FailedOver = false
 	url := req.URL.Host + req.URL.Path
 
@@ -1103,53 +1134,14 @@ func (p *HTTPClientPair) Do(req *http.Request) (*http.Response,error) {
 func (p *HTTPClientPair) Get(url string) (*http.Response,error) {
 	funcName := "HTTPClientPair.Get()"
 	var rsp *http.Response
-	var err error
 
 	if (p == nil) {
 		return rsp,fmt.Errorf("%s: Client pair is nil.",funcName)
 	}
-	p.FailedOver = false
 
-	if ((p.SecureClient == nil) && (p.InsecureClient == nil)) {
-		return rsp,fmt.Errorf("%s: Client pair is uninitialized, not usable.",
-					funcName)
-	}
-
-	if (p.SecureClient != nil) {
-		rsp,err = p.SecureClient.Get(url)
-		if (err != nil) {
-			if (p.InsecureClient != p.SecureClient) {
-				seclog_Errorf("%s: TLS-secure transport failed for '%s': %v -- trying insecure client.",
-					funcName,url,err)
-				if (p.InsecureClient == nil) {
-					emsg := fmt.Sprintf("%s: Failover to insecure transport failed: insecure client is nil.",funcName)
-					seclog_Errorf(emsg)
-					return rsp,fmt.Errorf(emsg)
-				}
-
-				p.FailedOver = true
-				rsp,err = p.InsecureClient.Get(url)
-				if (err != nil) {
-					seclog_Errorf("%s: TLS-insecure transport failed for '%s': %v",
-						funcName,url,err)
-					return rsp,err
-				}
-			} else {
-				return rsp,err
-			}
-		}
-	} else {
-		seclog_Warnf("%s: TLS-secure transport not available, using insecure.",
-			funcName)
-		rsp,err = p.InsecureClient.Get(url)
-		if (err != nil) {
-			seclog_Errorf("%s: TLS-insecure transport failed for '%s': %v",
-				funcName,url,err)
-			return rsp,err
-		}
-	}
-
-	return rsp,nil
+	req,_ := http.NewRequest("GET",url,nil)
+	base.SetHTTPUserAgent(req,instName)
+	return p.Do(req)
 }
 
 func (p *HTTPClientPair) Head(url string) (*http.Response,error) {
@@ -1206,103 +1198,31 @@ func (p *HTTPClientPair) Head(url string) (*http.Response,error) {
 func (p *HTTPClientPair) Post(url, contentType string, body io.Reader) (*http.Response,error) {
 	funcName := "HTTPClientPair.Post()"
 	var rsp *http.Response
-	var err error
 
 	if (p == nil) {
 		return rsp,fmt.Errorf("%s: Client pair is nil.",funcName)
 	}
-	p.FailedOver = false
 
-	if ((p.SecureClient == nil) && (p.InsecureClient == nil)) {
-		return rsp,fmt.Errorf("%s: Client pair is uninitialized, not usable.",
-					funcName)
-	}
-
-	if (p.SecureClient != nil) {
-		rsp,err = p.SecureClient.Post(url,contentType,body)
-		if (err != nil) {
-			if (p.InsecureClient != p.SecureClient) {
-				seclog_Errorf("%s: TLS-secure transport failed for '%s': %v -- trying insecure client.",
-					funcName,url,err)
-				if (p.InsecureClient == nil) {
-					emsg := fmt.Sprintf("%s: Failover to insecure transport failed: insecure client is nil.",funcName)
-					seclog_Errorf(emsg)
-					return rsp,fmt.Errorf(emsg)
-				}
-				p.FailedOver = true
-				rsp,err = p.InsecureClient.Post(url,contentType,body)
-				if (err != nil) {
-					seclog_Errorf("%s: TLS-insecure transport failed for '%s': %v",
-						funcName,url,err)
-					return rsp,err
-				}
-			} else {
-				return rsp,err
-			}
-		}
-	} else {
-		seclog_Warnf("%s: TLS-secure transport not available, using insecure.",
-			funcName)
-		rsp,err = p.InsecureClient.Post(url,contentType,body)
-		if (err != nil) {
-			seclog_Errorf("%s: TLS-insecure transport failed for '%s': %v",
-				funcName,url,err)
-			return rsp,err
-		}
-	}
-
-	return rsp,nil
+	req,_ := http.NewRequest("POST",url,body)
+	req.Header.Add("Content-Type",contentType)
+	base.SetHTTPUserAgent(req,instName)
+	return p.Do(req)
 }
 
 func (p *HTTPClientPair) PostForm(url string, data url.Values) (*http.Response,error) {
 	funcName := "HTTPClientPair.PostForm()"
 	var rsp *http.Response
-	var err error
 
 	if (p == nil) {
 		return rsp,fmt.Errorf("%s: Client pair is nil.",funcName)
 	}
-	p.FailedOver = false
 
-	if ((p.SecureClient == nil) && (p.InsecureClient == nil)) {
-		return rsp,fmt.Errorf("%s: Client pair is uninitialized, not usable.",
-					funcName)
-	}
-
-	if (p.SecureClient != nil) {
-		rsp,err = p.SecureClient.PostForm(url,data)
-		if (err != nil) {
-			if (p.InsecureClient != p.SecureClient) {
-				seclog_Errorf("%s: TLS-secure transport failed for '%s': %v -- trying insecure client.",
-					funcName,url,err)
-				p.FailedOver = true
-				if (p.InsecureClient == nil) {
-					emsg := fmt.Sprintf("%s: Failover to insecure transport failed: insecure client is nil.",funcName)
-					seclog_Errorf(emsg)
-					return rsp,fmt.Errorf(emsg)
-				}
-				rsp,err = p.InsecureClient.PostForm(url,data)
-				if (err != nil) {
-					seclog_Errorf("%s: TLS-insecure transport failed for '%s': %v",
-						funcName,url,err)
-					return rsp,err
-				}
-			} else {
-				return rsp,err
-			}
-		}
-	} else {
-		seclog_Warnf("%s: TLS-secure transport not available, using insecure.",
-			funcName)
-		rsp,err = p.InsecureClient.PostForm(url,data)
-		if (err != nil) {
-			seclog_Errorf("%s: TLS-insecure transport failed for '%s': %v",
-				funcName,url,err)
-			return rsp,err
-		}
-	}
-
-	return rsp,nil
+	//Gotta emulate this, then call Do()
+	vals := data.Encode()
+	req,_ := http.NewRequest("POST",url,bytes.NewBuffer([]byte(vals)))
+	base.SetHTTPUserAgent(req,instName)
+	req.Header.Add("Content-Type","application/x-www-form-urlencoded")
+	return p.Do(req)
 }
 
 

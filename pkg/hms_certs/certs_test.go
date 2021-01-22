@@ -1,4 +1,24 @@
-// Copyright 2020 Hewlett Packard Enterprise Development LP
+// MIT License
+// 
+// (C) Copyright [2020-2021] Hewlett Packard Enterprise Development LP
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+// OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
 
 
 package hms_certs
@@ -24,6 +44,8 @@ import (
 var cbCalled = false
 var globalT  *testing.T
 var expStatusG  = http.StatusOK
+var gotUserAgentHdrG bool
+var gotUrlEncHdrG bool
 
 var k8sTokenFilename = "/tmp/k8stoken"
 var k8sTestToken = `xyzzy1234`
@@ -48,6 +70,9 @@ var cannedVaultCertData = VaultCertData{RequestID:     "AAAA",
 
 
 func vaultTokenHandler(w http.ResponseWriter, req *http.Request) {
+	gotUserAgentHdrG = hasUserAgentHeader(req)
+	gotUrlEncHdrG = hasUrlEncodingHeader(req)
+
 	//Verify the correct POST payload
 	exp := `{"jwt":"` + k8sTestToken + `","role":"pki-common-direct"}`
 	body,berr := ioutil.ReadAll(req.Body)
@@ -80,6 +105,9 @@ func vaultTokenHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func pkiCertHandler(w http.ResponseWriter, req *http.Request) {
+	gotUserAgentHdrG = hasUserAgentHeader(req)
+	gotUrlEncHdrG = hasUrlEncodingHeader(req)
+
 	//Verify the header has the correct vault token
 	hstr,ok := req.Header["X-Vault-Token"]
 	if (!ok) {
@@ -110,6 +138,9 @@ func pkiCertHandler(w http.ResponseWriter, req *http.Request) {
 
 
 func pkiCAChainHandler(w http.ResponseWriter, req *http.Request) {
+	gotUserAgentHdrG = hasUserAgentHeader(req)
+	gotUrlEncHdrG = hasUrlEncodingHeader(req)
+
 	//Verify the header has the correct vault token
 	hstr,ok := req.Header["X-Vault-Token"]
 	if (!ok) {
@@ -127,9 +158,24 @@ func pkiCAChainHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(cannedCAChain))
 }
 
+var ghExp = `{"Status":"OK"}`
+
 func genericHandler(w http.ResponseWriter, req *http.Request) {
+	gotUserAgentHdrG = hasUserAgentHeader(req)
+	gotUrlEncHdrG = hasUrlEncodingHeader(req)
 	w.WriteHeader(expStatusG)
-	w.Write([]byte(`{"Status":"OK"}`))
+	w.Write([]byte(ghExp))
+}
+
+func genericHandlerReturnOK(w *http.Response) (bool,string,string) {
+	body,err := ioutil.ReadAll(w.Body)
+	if (err != nil) {
+		return false,ghExp,"Error reading response body"
+	}
+	if (strings.TrimSpace(ghExp) != strings.TrimSpace(string(body))) {
+		return false,ghExp,string(body)
+	}
+	return true,"",""
 }
 
 
@@ -145,6 +191,39 @@ func setEnviron(t *testing.T) {
 	}
 	os.Chmod(k8sTokenFilename,0666)
 	ConfigParams.LogInsecureFailover = true
+}
+
+func hasUserAgentHeader(r *http.Request) bool {
+	if (len(r.Header) == 0) {
+		return false
+	}
+
+	_,ok := r.Header["User-Agent"]
+	if (!ok) {
+		return false
+	}
+	return true
+}
+
+func hasUrlEncodingHeader(r *http.Request) bool {
+	if (len(r.Header) == 0) {
+		return false
+	}
+
+	vals,ok := r.Header["Content-Type"]
+	if (!ok) {
+		return false
+	}
+
+	found := false
+	for _,v := range(vals) {
+		if (v == "application/x-www-form-urlencoded") {
+			found = true
+			break
+		}
+	}
+
+	return found
 }
 
 
@@ -668,7 +747,7 @@ ZZZZ`
 
 func TestInit(t *testing.T) {
 	Init(nil)
-	Init(logrus.New())
+	InitInstance(logrus.New(),"CertsTest")
 }
 
 func TestCreateHTTPClientPair(t *testing.T) {
@@ -718,6 +797,9 @@ func TestCreateHTTPClientPair(t *testing.T) {
 }
 
 func TestHTTPPairOps(t *testing.T) {
+	var ok bool
+	var exp,act string
+
 	setEnviron(t)
 	ferr := createFakeCAChainCRT()
 	if (ferr != nil) {
@@ -747,7 +829,12 @@ func TestHTTPPairOps(t *testing.T) {
 	if (cpp.FailedOver == true) {
 		t.Errorf("Do() operation incorrectly failed over.")
 	}
+	ok,exp,act = genericHandlerReturnOK(rsp)
+	if (!ok) {
+		t.Errorf("Do() return mismatch, exp: '%s', got: '%s'",exp,act)
+	}
 
+	globalT = t
 	rsp,rerr = cpp.Get(srv.URL)
 	if (rerr != nil) {
 		t.Errorf("ERROR from Get(): %v",rerr)
@@ -757,6 +844,13 @@ func TestHTTPPairOps(t *testing.T) {
 	}
 	if (cpp.FailedOver == true) {
 		t.Errorf("Get() operation incorrectly failed over.")
+	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("Get() operation has no User-Agent header.")
+	}
+	ok,exp,act = genericHandlerReturnOK(rsp)
+	if (!ok) {
+		t.Errorf("Get() return mismatch, exp: '%s', got: '%s'",exp,act)
 	}
 	rsp,rerr = cpp.Head(srv.URL)
 	if (rerr != nil) {
@@ -779,6 +873,13 @@ func TestHTTPPairOps(t *testing.T) {
 	if (cpp.FailedOver == true) {
 		t.Errorf("Post() operation incorrectly failed over.")
 	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("Post() operation has no User-Agent header.")
+	}
+	ok,exp,act = genericHandlerReturnOK(rsp)
+	if (!ok) {
+		t.Errorf("Post() return mismatch, exp: '%s', got: '%s'",exp,act)
+	}
 
 	rsp,rerr = cpp.PostForm(srv.URL, url.Values{})
 	if (rerr != nil) {
@@ -789,6 +890,16 @@ func TestHTTPPairOps(t *testing.T) {
 	}
 	if (cpp.FailedOver == true) {
 		t.Errorf("PostForm() operation incorrectly failed over.")
+	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("PostForm() operation has no User-Agent header.")
+	}
+	if (!gotUrlEncHdrG) {
+		t.Errorf("PostForm() operation has no URL encoding header.")
+	}
+	ok,exp,act = genericHandlerReturnOK(rsp)
+	if (!ok) {
+		t.Errorf("PostForm() return mismatch, exp: '%s', got: '%s'",exp,act)
 	}
 
 	//Create ClientPair with no CA, test all funcs
@@ -808,6 +919,10 @@ func TestHTTPPairOps(t *testing.T) {
 	if (cpp.FailedOver == true) {
 		t.Errorf("Do() operation incorrectly failed over.")
 	}
+	ok,exp,act = genericHandlerReturnOK(rsp)
+	if (!ok) {
+		t.Errorf("Do() return mismatch, exp: '%s', got: '%s'",exp,act)
+	}
 
 	rsp,rerr = cpp.Get(srv.URL)
 	if (rerr != nil) {
@@ -819,6 +934,14 @@ func TestHTTPPairOps(t *testing.T) {
 	if (cpp.FailedOver == true) {
 		t.Errorf("Get() operation incorrectly failed over.")
 	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("Get() operation has no User-Agent header.")
+	}
+	ok,exp,act = genericHandlerReturnOK(rsp)
+	if (!ok) {
+		t.Errorf("Get() return mismatch, exp: '%s', got: '%s'",exp,act)
+	}
+
 	rsp,rerr = cpp.Head(srv.URL)
 	if (rerr != nil) {
 		t.Errorf("ERROR from Head(): %v",rerr)
@@ -840,6 +963,13 @@ func TestHTTPPairOps(t *testing.T) {
 	if (cpp.FailedOver == true) {
 		t.Errorf("Post() operation incorrectly failed over.")
 	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("Post() operation has no User-Agent header.")
+	}
+	ok,exp,act = genericHandlerReturnOK(rsp)
+	if (!ok) {
+		t.Errorf("Post() return mismatch, exp: '%s', got: '%s'",exp,act)
+	}
 
 	rsp,rerr = cpp.PostForm(srv.URL, url.Values{})
 	if (rerr != nil) {
@@ -850,6 +980,16 @@ func TestHTTPPairOps(t *testing.T) {
 	}
 	if (cpp.FailedOver == true) {
 		t.Errorf("PostForm() operation incorrectly failed over.")
+	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("PostForm() operation has no User-Agent header.")
+	}
+	if (!gotUrlEncHdrG) {
+		t.Errorf("PostForm() operation has no URL encoding header.")
+	}
+	ok,exp,act = genericHandlerReturnOK(rsp)
+	if (!ok) {
+		t.Errorf("PostForm() return mismatch, exp: '%s', got: '%s'",exp,act)
 	}
 
 
@@ -1053,6 +1193,9 @@ func TestRetryableHTTPPairOps(t *testing.T) {
 	if (cpp.FailedOver == true) {
 		t.Errorf("Get() operation incorrectly failed over.")
 	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("Get() operation has no User-Agent header.")
+	}
 	rsp,rerr = cpp.Head(srv.URL)
 	if (rerr != nil) {
 		t.Errorf("ERROR from Head(): %v",rerr)
@@ -1074,6 +1217,9 @@ func TestRetryableHTTPPairOps(t *testing.T) {
 	if (cpp.FailedOver == true) {
 		t.Errorf("Post() operation incorrectly failed over.")
 	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("Post() operation has no User-Agent header.")
+	}
 
 	rsp,rerr = cpp.PostForm(srv.URL, url.Values{})
 	if (rerr != nil) {
@@ -1084,6 +1230,12 @@ func TestRetryableHTTPPairOps(t *testing.T) {
 	}
 	if (cpp.FailedOver == true) {
 		t.Errorf("PostForm() operation incorrectly failed over.")
+	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("PostForm() operation has no User-Agent header.")
+	}
+	if (!gotUrlEncHdrG) {
+		t.Errorf("PostForm() operation has no URL encoding header.")
 	}
 
 	//Create ClientPair with no CA, test all funcs
@@ -1103,6 +1255,9 @@ func TestRetryableHTTPPairOps(t *testing.T) {
 	if (cpp.FailedOver == true) {
 		t.Errorf("Do() operation incorrectly failed over.")
 	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("Do() operation has no User-Agent header.")
+	}
 
 	rsp,rerr = cpp.Get(srv.URL)
 	if (rerr != nil) {
@@ -1113,6 +1268,9 @@ func TestRetryableHTTPPairOps(t *testing.T) {
 	}
 	if (cpp.FailedOver == true) {
 		t.Errorf("Get() operation incorrectly failed over.")
+	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("Get() operation has no User-Agent header.")
 	}
 	rsp,rerr = cpp.Head(srv.URL)
 	if (rerr != nil) {
@@ -1135,6 +1293,9 @@ func TestRetryableHTTPPairOps(t *testing.T) {
 	if (cpp.FailedOver == true) {
 		t.Errorf("Post() operation incorrectly failed over.")
 	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("Post() operation has no User-Agent header.")
+	}
 
 	rsp,rerr = cpp.PostForm(srv.URL, url.Values{})
 	if (rerr != nil) {
@@ -1145,6 +1306,12 @@ func TestRetryableHTTPPairOps(t *testing.T) {
 	}
 	if (cpp.FailedOver == true) {
 		t.Errorf("PostForm() operation incorrectly failed over.")
+	}
+	if (!gotUserAgentHdrG) {
+		t.Errorf("PostForm() operation has no User-Agent header.")
+	}
+	if (!gotUrlEncHdrG) {
+		t.Errorf("PostForm() operation has no URL encoding header.")
 	}
 
 
