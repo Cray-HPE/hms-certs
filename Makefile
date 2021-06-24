@@ -26,8 +26,8 @@ export DOCKER_IMAGE ?= ${NAME}:${VERSION}
 
 all: image test
 
-image:
-		./runCoverage.sh
-
 test:
 		./runUnitTest.sh
+
+image:
+		./runCoverage.sh

@@ -19,15 +19,15 @@ pipeline {
     }
 
     stages {
-        stage("Image") {
-            steps {
-                sh "make image"
-            }
-        }
-
         stage("Test") {
             steps {
                 sh "make test"
+            }
+        }
+        
+        stage("Image") {
+            steps {
+                sh "make image"
             }
         }
 
