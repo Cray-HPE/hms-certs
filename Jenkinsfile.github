@@ -19,6 +19,12 @@ pipeline {
     }
 
     stages {
+        stage("Test") {
+            steps {
+                sh "make test"
+            }
+        }
+
         stage("Image") {
             steps {
                 sh "make image"
@@ -28,7 +34,6 @@ pipeline {
         stage("Publish") {
             steps {
                 script {
-                    echo "publish"
                     publishCsmDockerImage(image: env.NAME, tag: env.VERSION, isStable: env.IS_STABLE)
                 }
             }

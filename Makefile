@@ -21,7 +21,7 @@
 # (MIT License)
 
 NAME ?= hms-certs
-VERSION ?= $(shell cat .version)-local
+export VERSION ?= $(shell cat .version)-local
 DOCKER_IMAGE ?= ${NAME}:${VERSION}
 
 all: test image
