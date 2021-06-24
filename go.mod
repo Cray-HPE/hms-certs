@@ -1,6 +1,6 @@
 module stash.us.cray.com/HMS/hms-certs
 
-go 1.12
+go 1.16
 
 require (
 	github.com/hashicorp/go-retryablehttp v0.5.4
