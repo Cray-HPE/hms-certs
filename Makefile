@@ -24,13 +24,13 @@ NAME ?= hms-certs
 export VERSION ?= $(shell cat .version)-local
 DOCKER_IMAGE ?= ${NAME}:${VERSION}
 
-all: build_base test image
-
-image:
-		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${VERSION}' .
+all: test coverage image
 
 test:
 		./runUnitTest.sh
 
 coverage:
 		./runCoverage.sh
+
+image:
+		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${VERSION}' .

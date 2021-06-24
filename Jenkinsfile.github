@@ -25,6 +25,12 @@ pipeline {
             }
         }
 
+        stage("Coverage") {
+            steps {
+                sh "make coverage"
+            }
+        }
+
         stage("Image") {
             steps {
                 sh "make image"
