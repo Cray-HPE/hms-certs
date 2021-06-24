@@ -21,10 +21,10 @@
 # (MIT License)
 
 NAME ?= hms-certs
-export VERSION ?= $(shell cat .version)-local
-export DOCKER_IMAGE ?= ${NAME}:${VERSION}
+VERSION ?= $(shell cat .version)-local
+DOCKER_IMAGE ?= ${NAME}:${VERSION}
 
-all: image test
+all: test image
 
 test:
 		./runUnitTest.sh

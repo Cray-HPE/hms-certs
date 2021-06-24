@@ -24,7 +24,7 @@ pipeline {
                 sh "make test"
             }
         }
-        
+
         stage("Image") {
             steps {
                 sh "make image"
