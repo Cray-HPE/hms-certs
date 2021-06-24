@@ -22,6 +22,6 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 
 # Build the build base image
-docker build -t cray/hms-certs-build-base -f Dockerfile.build-base .
+docker build -t cray/hms-certs-build-base:${VERSION} -f Dockerfile.build-base .
 
-docker build -t cray/hms-certs-testing -f Dockerfile.testing .
+docker build -t cray/hms-certs-testing:${VERSION} -f Dockerfile.testing .
