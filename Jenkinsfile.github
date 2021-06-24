@@ -19,15 +19,15 @@ pipeline {
     }
 
     stages {
-        stage("Lint") {
+        stage("Image") {
             steps {
-                sh "make lint"
+                sh "make image"
             }
         }
 
-        stage("Build") {
+        stage("Test") {
             steps {
-                sh "make image"
+                sh "make test"
             }
         }
 
