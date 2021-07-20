@@ -1,4 +1,4 @@
-# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -17,20 +17,19 @@
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
-#
-# (MIT License)
 
 NAME ?= hms-certs
 export VERSION ?= $(shell cat .version)-local
 DOCKER_IMAGE ?= ${NAME}:${VERSION}
 
-all: test coverage image
-
-test:
-		./runUnitTest.sh
-
-coverage:
-		./runCoverage.sh
+all: image test coverage
 
 image:
-		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${VERSION}' .
+	docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${VERSION}' .
+
+test:
+	./runUnitTest.sh
+
+coverage:
+	./runCoverage.sh
+
