@@ -1,10 +1,10 @@
-module stash.us.cray.com/HMS/hms-certs
+module github.com/Cray-HPE/hms-certs
 
 go 1.16
 
 require (
-	github.com/hashicorp/go-retryablehttp v0.5.4
-	github.com/sirupsen/logrus v1.6.0
-	stash.us.cray.com/HMS/hms-base v1.12.0
-	stash.us.cray.com/HMS/hms-securestorage v1.11.0
+	github.com/Cray-HPE/hms-base v1.15.0
+	github.com/Cray-HPE/hms-securestorage v1.12.2
+	github.com/hashicorp/go-retryablehttp v0.7.0
+	github.com/sirupsen/logrus v1.8.1
 )

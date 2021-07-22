@@ -26,4 +26,4 @@ FROM cray/hms-certs-build-base
 
 # Run coverage.
 RUN set -ex \
-    && go test -cover -v stash.us.cray.com/HMS/hms-certs/pkg/hms_certs/.
+    && go test -cover -v github.com/Cray-HPE/hms-certs/pkg/hms_certs/.

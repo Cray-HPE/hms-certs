@@ -37,7 +37,7 @@ import (
 	"testing"
 	"time"
 	"github.com/sirupsen/logrus"
-	"stash.us.cray.com/HMS/hms-base"
+	"github.com/Cray-HPE/hms-base"
 )
 
 
