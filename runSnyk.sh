@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#! /bin/bash
 # MIT License
 #
 # (C) Copyright [2021] Hewlett Packard Enterprise Development LP
@@ -20,8 +20,28 @@
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
+set -ex
+SNYK_OPTS="--dev --show-vulnerable-paths=all --fail-on=all --severity-threshold=${SEVERITY:-high} --skip-unresolved=true --json"
 
-# Build the build base image
-docker build -t cray/hms-certs-build-base -f Dockerfile.build-base .
+OUT=$(set -x; snyk test --all-projects --detection-depth=999 $SNYK_OPTS)
 
-docker build -t cray/hms-certs-testing -f Dockerfile.testing .
+PROJ_CHECK=OK
+jq .[].ok <<<"$OUT" | grep -q false && PROJ_CHECK=FAIL
+
+echo Snyk project check: $PROJ_CHECK
+
+DOCKER_CHECK=
+if [ -f Dockerfile ]; then
+    DOCKER_IMAGE=${PWD/*\//}:$(cat .version)
+    docker build --tag $DOCKER_IMAGE .
+    OUT=$(set -x; snyk test --docker $DOCKER_IMAGE --file=${PWD}/Dockerfile $SNYK_OPTS)
+    DOCKER_CHECK=OK
+    jq .ok <<<"$OUT" | grep -q false && DOCKER_CHECK=FAIL
+fi
+
+echo
+echo Snyk project check: $PROJ_CHECK
+echo Snyk docker check: $DOCKER_CHECK
+
+test "$PROJ_CHECK" == OK -a "$DOCKER_CHECK" == OK
+exit $?
