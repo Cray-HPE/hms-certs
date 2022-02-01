@@ -22,9 +22,9 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 name: Run Unit Tests
-on: [push, pull_request]
+on: [push, workflow_dispatch, pull_request]
 jobs:
   run_unit_test:
-    uses: Cray-HPE/hms-build-scripts/.github/workflows/run_unit_test.yaml@master
+    uses: Cray-HPE/hms-build-image-workflows/.github/workflows/run_unit_test.yaml@v1
     with:
       runs-on: ubuntu-latest
