@@ -1,6 +1,6 @@
 // MIT License
 // 
-// (C) Copyright [2020-2021] Hewlett Packard Enterprise Development LP
+// (C) Copyright [2020-2022] Hewlett Packard Enterprise Development LP
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -25,12 +25,10 @@ package hms_certs
 
 import (
 	"bytes"
-	"log"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"encoding/json"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -65,97 +63,6 @@ var cannedVaultCertData = VaultCertData{RequestID:     "AAAA",
                                                        PrivateKeyType: "rsa",
                                                        FQDN: ".aaa.com",
                                                        SerialNumber:   "JJJJ",},
-}
-
-
-
-func vaultTokenHandler(w http.ResponseWriter, req *http.Request) {
-	gotUserAgentHdrG = hasUserAgentHeader(req)
-	gotUrlEncHdrG = hasUrlEncodingHeader(req)
-
-	//Verify the correct POST payload
-	exp := `{"jwt":"` + k8sTestToken + `","role":"pki-common-direct"}`
-	body,berr := ioutil.ReadAll(req.Body)
-	if (berr != nil) {
-		log.Printf("ERROR reading request body: %v",berr)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if (string(body) != exp) {
-		log.Printf("ERROR mismatch in POST payload, exp: '%s', got: '%s'",
-			exp,string(body))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	//Return the canned vault token
-
-	var jdata vaultTokStuff
-	jdata.Auth.ClientToken = vaultTestToken
-	ba,baerr := json.Marshal(&jdata)
-	if (baerr != nil) {
-		log.Printf("ERROR marshalling vault token payload: %v",baerr)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type","application/json")
-	w.Write(ba)
-}
-
-func pkiCertHandler(w http.ResponseWriter, req *http.Request) {
-	gotUserAgentHdrG = hasUserAgentHeader(req)
-	gotUrlEncHdrG = hasUrlEncodingHeader(req)
-
-	//Verify the header has the correct vault token
-	hstr,ok := req.Header["X-Vault-Token"]
-	if (!ok) {
-		log.Printf("ERROR, X-Vault-Token missing from headers.")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if (hstr[0] != vaultTestToken) {
-		log.Printf("ERROR, header X-Vault-Token mismatch, exp: '%s', got: '%s'",
-			vaultTestToken,hstr[0])
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-
-	//Generate response payload
-
-	ba,berr := json.Marshal(&cannedVaultCertData)
-	if (berr != nil) {
-		log.Printf("ERROR marshalling canned vault cert data: %v",berr)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type","application/json")
-	w.Write(ba)
-}
-
-
-func pkiCAChainHandler(w http.ResponseWriter, req *http.Request) {
-	gotUserAgentHdrG = hasUserAgentHeader(req)
-	gotUrlEncHdrG = hasUrlEncodingHeader(req)
-
-	//Verify the header has the correct vault token
-	hstr,ok := req.Header["X-Vault-Token"]
-	if (!ok) {
-		log.Printf("ERROR, X-Vault-Token missing from headers.")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if (hstr[0] != vaultTestToken) {
-		log.Printf("ERROR, header X-Vault-Token mismatch, exp: '%s', got: '%s'",
-			vaultTestToken,hstr[0])
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(cannedCAChain))
 }
 
 var ghExp = `{"Status":"OK"}`
@@ -224,35 +131,6 @@ func hasUrlEncodingHeader(r *http.Request) bool {
 	}
 
 	return found
-}
-
-
-func TestGetHTTPClient(t *testing.T) {
-	client := getHTTPClient()
-	if (client == nil) {
-		t.Errorf("Client is nil.")
-	}
-	client2 := getHTTPClient()
-	if (client != client2) {
-		t.Errorf("Clients are not the same.")
-	}
-}
-
-
-func TestGetVaultToken(t *testing.T) {
-	setEnviron(t)
-
-	testServer := httptest.NewServer(http.HandlerFunc(vaultTokenHandler))
-	defer testServer.Close()
-	ConfigParams.K8SAuthUrl = testServer.URL
-	tok,tokErr := getVaultToken()
-	if (tokErr != nil) {
-		t.Errorf("Error in getVaultToken(): %v",tokErr)
-	}
-	if (tok != vaultTestToken) {
-		t.Errorf("Mismatch in vault token, exp: '%s', got: '%s'",
-			vaultTestToken,tok)
-	}
 }
 
 func TestGenAllDomainAltNames(t *testing.T) {
@@ -523,163 +401,6 @@ func TestCheckDomain(t *testing.T) {
 	}
 }
 
-
-//NOTE: this function also test createTargCerts().
-
-func TestCreateCert(t *testing.T) {
-	var jdata VaultCertData
-
-	setEnviron(t)
-
-	//Set up test servers for vault token and vault PKI
-
-	vtServer := httptest.NewServer(http.HandlerFunc(vaultTokenHandler))
-	pkiServer := httptest.NewServer(http.HandlerFunc(pkiCertHandler))
-	defer vtServer.Close()
-	defer pkiServer.Close()
-	ConfigParams.K8SAuthUrl = vtServer.URL
-	ConfigParams.VaultPKIUrl = pkiServer.URL
-
-	err := CreateCert([]string{"x0c0s0b0","x0c0s1b0"},CertDomainCabinet,"",&jdata)
-	if (err != nil) {
-		t.Errorf("ERROR CreateCert(): %v",err)
-	}
-
-	//Compare returned struct with canned one.
-
-	if (jdata.RequestID != cannedVaultCertData.RequestID) {
-		t.Errorf("Mismatch RequestID, exp: '%s', got: '%s'",
-			jdata.RequestID,cannedVaultCertData.RequestID)
-	}
-	if (jdata.LeaseID != cannedVaultCertData.LeaseID) {
-		t.Errorf("Mismatch LeaseID, exp: '%s', got: '%s'",
-			jdata.LeaseID,cannedVaultCertData.LeaseID)
-	}
-	if (jdata.Renewable != cannedVaultCertData.Renewable) {
-		t.Errorf("Mismatch Renewable, exp: %t, got: %t",
-			jdata.Renewable,cannedVaultCertData.Renewable)
-	}
-	if (jdata.LeaseDuration != cannedVaultCertData.LeaseDuration) {
-		t.Errorf("Mismatch LeaseDuration, exp: %d, got: %d",
-			jdata.LeaseDuration,cannedVaultCertData.LeaseDuration)
-	}
-	if (len(jdata.Data.CAChain) == 0) {
-		t.Errorf("CAChain is zero length, expecting >= 1.")
-	}
-	if ((len(jdata.Data.CAChain) > 0) && (jdata.Data.CAChain[0] != cannedVaultCertData.Data.CAChain[0])) {
-		t.Errorf("Mismatch CAChain[0], exp: '%s', got: '%s'",
-			jdata.Data.CAChain[0],cannedVaultCertData.Data.CAChain[0])
-	}
-	if (jdata.Data.Certificate != cannedVaultCertData.Data.Certificate) {
-		t.Errorf("Mismatch Certificate, exp: '%s', got: '%s'",
-			jdata.Data.Certificate,cannedVaultCertData.Data.Certificate)
-	}
-	if (jdata.Data.Expiration != cannedVaultCertData.Data.Expiration) {
-		t.Errorf("Mismatch Expiration, exp: %d, got: %d",
-			jdata.Data.Expiration,cannedVaultCertData.Data.Expiration)
-	}
-	if (jdata.Data.IssuingCA != cannedVaultCertData.Data.IssuingCA) {
-		t.Errorf("Mismatch IssuingCA, exp: '%s', got: '%s'",
-			jdata.Data.IssuingCA,cannedVaultCertData.Data.IssuingCA)
-	}
-	if (jdata.Data.PrivateKey != cannedVaultCertData.Data.PrivateKey) {
-		t.Errorf("Mismatch PrivateKey, exp: '%s', got: '%s'",
-			jdata.Data.PrivateKey,cannedVaultCertData.Data.PrivateKey)
-	}
-	if (jdata.Data.PrivateKeyType != cannedVaultCertData.Data.PrivateKeyType) {
-		t.Errorf("Mismatch PrivateKeyType, exp: '%s', got: '%s'",
-			jdata.Data.PrivateKeyType,cannedVaultCertData.Data.PrivateKeyType)
-	}
-	if (jdata.Data.SerialNumber != cannedVaultCertData.Data.SerialNumber) {
-		t.Errorf("Mismatch SerialNumber, exp: '%s', got: '%s'",
-			jdata.Data.SerialNumber,cannedVaultCertData.Data.SerialNumber)
-	}
-
-	//Same test but using a single cab name
-
-	err = CreateCert([]string{"x0"},CertDomainCabinet,"",&jdata)
-	if (err != nil) {
-		t.Errorf("ERROR CreateCert(): %v",err)
-	}
-
-	//Compare returned struct with canned one.
-
-	if (jdata.RequestID != cannedVaultCertData.RequestID) {
-		t.Errorf("Mismatch RequestID, exp: '%s', got: '%s'",
-			jdata.RequestID,cannedVaultCertData.RequestID)
-	}
-	if (jdata.LeaseID != cannedVaultCertData.LeaseID) {
-		t.Errorf("Mismatch LeaseID, exp: '%s', got: '%s'",
-			jdata.LeaseID,cannedVaultCertData.LeaseID)
-	}
-	if (jdata.Renewable != cannedVaultCertData.Renewable) {
-		t.Errorf("Mismatch Renewable, exp: %t, got: %t",
-			jdata.Renewable,cannedVaultCertData.Renewable)
-	}
-	if (jdata.LeaseDuration != cannedVaultCertData.LeaseDuration) {
-		t.Errorf("Mismatch LeaseDuration, exp: %d, got: %d",
-			jdata.LeaseDuration,cannedVaultCertData.LeaseDuration)
-	}
-	if (len(jdata.Data.CAChain) == 0) {
-		t.Errorf("CAChain is zero length, expecting >= 1.")
-	}
-	if ((len(jdata.Data.CAChain) > 0) && (jdata.Data.CAChain[0] != cannedVaultCertData.Data.CAChain[0])) {
-		t.Errorf("Mismatch CAChain[0], exp: '%s', got: '%s'",
-			jdata.Data.CAChain[0],cannedVaultCertData.Data.CAChain[0])
-	}
-	if (jdata.Data.Certificate != cannedVaultCertData.Data.Certificate) {
-		t.Errorf("Mismatch Certificate, exp: '%s', got: '%s'",
-			jdata.Data.Certificate,cannedVaultCertData.Data.Certificate)
-	}
-	if (jdata.Data.Expiration != cannedVaultCertData.Data.Expiration) {
-		t.Errorf("Mismatch Expiration, exp: %d, got: %d",
-			jdata.Data.Expiration,cannedVaultCertData.Data.Expiration)
-	}
-	if (jdata.Data.IssuingCA != cannedVaultCertData.Data.IssuingCA) {
-		t.Errorf("Mismatch IssuingCA, exp: '%s', got: '%s'",
-			jdata.Data.IssuingCA,cannedVaultCertData.Data.IssuingCA)
-	}
-	if (jdata.Data.PrivateKey != cannedVaultCertData.Data.PrivateKey) {
-		t.Errorf("Mismatch PrivateKey, exp: '%s', got: '%s'",
-			jdata.Data.PrivateKey,cannedVaultCertData.Data.PrivateKey)
-	}
-	if (jdata.Data.PrivateKeyType != cannedVaultCertData.Data.PrivateKeyType) {
-		t.Errorf("Mismatch PrivateKeyType, exp: '%s', got: '%s'",
-			jdata.Data.PrivateKeyType,cannedVaultCertData.Data.PrivateKeyType)
-	}
-	if (jdata.Data.SerialNumber != cannedVaultCertData.Data.SerialNumber) {
-		t.Errorf("Mismatch SerialNumber, exp: '%s', got: '%s'",
-			jdata.Data.SerialNumber,cannedVaultCertData.Data.SerialNumber)
-	}
-
-	//Use a FQDN, multiple
-
-	fqdn := ".aaa.com"
-	err = CreateCert([]string{"x0c0s0b0","x0c0s1b0"},CertDomainCabinet,fqdn,&jdata)
-	if (err != nil) {
-		t.Errorf("ERROR CreateCert(): %v",err)
-	}
-
-	//Make sure the FQDN got through.
-
-	if (jdata.Data.FQDN != fqdn) {
-		t.Errorf("ERROR CreateCert(), FQDN mismatch, exp: '%s', got: '%s'",
-			fqdn,jdata.Data.FQDN)
-	}
-
-	//Same test, single cab
-
-	fqdn = "aaa.com"
-	err = CreateCert([]string{"x0"},CertDomainCabinet,fqdn,&jdata)
-	if (err != nil) {
-		t.Errorf("ERROR CreateCert(): %v",err)
-	}
-	if (jdata.Data.FQDN != ("."+fqdn)) {
-		t.Errorf("ERROR CreateCert(), FQDN mismatch, exp: '.%s', got: '%s'",
-			fqdn,jdata.Data.FQDN)
-	}
-}
-
 func createFakeCAChainCRT() error {
 	ferr := ioutil.WriteFile(cachainFilename,[]byte(cannedCAChain),0777)
 	if (ferr != nil) {
@@ -690,31 +411,6 @@ func createFakeCAChainCRT() error {
 		return ferr
 	}
 	return nil
-}
-
-
-func TestFetchCAChain(t *testing.T) {
-	setEnviron(t)
-	vtServer := httptest.NewServer(http.HandlerFunc(vaultTokenHandler))
-	caServer := httptest.NewServer(http.HandlerFunc(pkiCAChainHandler))
-	defer vtServer.Close()
-	defer caServer.Close()
-	ConfigParams.K8SAuthUrl = vtServer.URL
-	ConfigParams.VaultCAUrl = caServer.URL
-
-	ferr := createFakeCAChainCRT()
-	if (ferr != nil) {
-		t.Errorf("ERROR creating fake CA chain CRT: %v",ferr)
-	}
-
-	chain,err := FetchCAChain("/tmp/ca_chain.crt")
-	if (err != nil) {
-		t.Errorf("ERROR fetching CA chain: %v",err)
-	}
-	if (chain != cannedCAChain) {
-		t.Errorf("Mismatch in CA chain, exp: '%s', got: '%s'",
-			cannedCAChain,chain)
-	}
 }
 
 func TestNLTuple(t *testing.T) {
