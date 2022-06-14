@@ -1,7 +1,7 @@
 # github.com/Cray-HPE/hms-base v1.15.0
 ## explicit
 github.com/Cray-HPE/hms-base
-# github.com/Cray-HPE/hms-securestorage v1.12.2
+# github.com/Cray-HPE/hms-securestorage v1.13.0
 ## explicit
 github.com/Cray-HPE/hms-securestorage
 # github.com/fsnotify/fsnotify v1.4.9
