@@ -38,6 +38,7 @@ import (
 	"bytes"
 	"time"
 	"errors"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 
