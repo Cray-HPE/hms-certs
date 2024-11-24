@@ -41,6 +41,7 @@ import (
 	"crypto/x509"
 
 	"github.com/Cray-HPE/hms-base/v2"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 	sstorage "github.com/Cray-HPE/hms-securestorage"
 	"github.com/sirupsen/logrus"
 	"github.com/hashicorp/go-retryablehttp"

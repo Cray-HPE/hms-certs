@@ -5,6 +5,7 @@ go 1.23
 require (
 	github.com/Cray-HPE/hms-base/v2 v2.0.1
 	github.com/Cray-HPE/hms-securestorage v1.13.0
+	github.com/Cray-HPE/hms-xname v1.3.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/sirupsen/logrus v1.8.1
 )
