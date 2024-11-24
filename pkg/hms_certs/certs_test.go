@@ -35,7 +35,6 @@ import (
 	"testing"
 	"time"
 	"github.com/sirupsen/logrus"
-	"github.com/Cray-HPE/hms-base/v2"
 	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
