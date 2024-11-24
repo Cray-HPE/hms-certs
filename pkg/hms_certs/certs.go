@@ -37,6 +37,7 @@ import (
 	"strconv"
 	"bytes"
 	"time"
+	"errors"
 	"crypto/tls"
 	"crypto/x509"
 
@@ -964,7 +965,10 @@ func (p *HTTPClientPair) Do(req *http.Request) (*http.Response,error) {
 	if (p.SecureClient != nil) {
 		rsp,err = p.SecureClient.Do(rtReq)
 		if (err != nil) {
-			if (p.InsecureClient != p.SecureClient) {
+			// Only attempt insecure if this was not a context timeout or cancel
+			if (p.InsecureClient != p.SecureClient &&
+				(!errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled)) {
+
 				seclog_Errorf("%s: TLS-secure transport failed for '%s': %v -- trying insecure client.",
 						funcName,url,err)
 				if (p.InsecureClient == nil) {
@@ -981,6 +985,8 @@ func (p *HTTPClientPair) Do(req *http.Request) (*http.Response,error) {
 					return rsp,err
 				}
 			} else {
+				seclog_Errorf("%s: TLS-secure transport failed for '%s': %v (no retry)",
+						funcName,url,err)
 				return rsp,err
 			}
 		}
@@ -1029,7 +1035,10 @@ func (p *HTTPClientPair) Head(url string) (*http.Response,error) {
 	if (p.SecureClient != nil) {
 		rsp,err = p.SecureClient.Head(url)
 		if (err != nil) {
-			if (p.InsecureClient != p.SecureClient) {
+			// Only attempt insecure if this was not a context timeout or cancel
+			if (p.InsecureClient != p.SecureClient &&
+				(!errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled))) {
+
 				seclog_Errorf("%s: TLS-secure transport failed for '%s': %v -- trying insecure client.",
 					funcName,url,err)
 				if (p.InsecureClient == nil) {
@@ -1045,6 +1054,8 @@ func (p *HTTPClientPair) Head(url string) (*http.Response,error) {
 					return rsp,err
 				}
 			} else {
+				seclog_Errorf("%s: TLS-secure transport failed for '%s': %v (no retry)",
+					funcName,url,err)
 				return rsp,err
 			}
 		}
