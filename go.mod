@@ -7,7 +7,7 @@ require (
 	github.com/Cray-HPE/hms-securestorage v1.13.0
 	github.com/Cray-HPE/hms-xname v1.3.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.3
 )
 
 require (
