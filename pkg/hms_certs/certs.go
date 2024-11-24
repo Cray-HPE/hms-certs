@@ -967,7 +967,7 @@ func (p *HTTPClientPair) Do(req *http.Request) (*http.Response,error) {
 		if (err != nil) {
 			// Only attempt insecure if this was not a context timeout or cancel
 			if (p.InsecureClient != p.SecureClient &&
-				(!errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled)) {
+				(!errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled))) {
 
 				seclog_Errorf("%s: TLS-secure transport failed for '%s': %v -- trying insecure client.",
 						funcName,url,err)
