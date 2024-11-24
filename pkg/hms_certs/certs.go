@@ -461,7 +461,7 @@ func checkDomainTargs(endpoints []string, domain string, sep string) (string,err
 		//There can be -xxx annotations in some cases, e.g. x0m0-rts, so strip
 		//off anything with a dash.
 		dtoks := strings.Split(ttoks[0],"-")
-		if (base.VerifyNormalizeCompID(dtoks[0]) == "") {
+		if (xnametypes.VerifyNormalizeCompID(dtoks[0]) == "") {
 			return "",fmt.Errorf("ERROR, endpoint not a valid XName: %s (%s)",
 				ttoks[0],endpoints[ix])
 		}
