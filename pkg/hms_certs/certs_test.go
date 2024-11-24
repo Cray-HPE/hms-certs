@@ -36,6 +36,7 @@ import (
 	"time"
 	"github.com/sirupsen/logrus"
 	"github.com/Cray-HPE/hms-base/v2"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 )
 
 
@@ -168,7 +169,7 @@ func TestGenAllDomainAltNames(t *testing.T) {
 		if (strings.Contains(ep,"-rts")) {
 			continue
 		}
-		if (base.GetHMSTypeString(ep) == "") {
+		if (xnametypes.GetHMSTypeString(ep) == "") {
 			t.Errorf("Invalid XName: '%s'",ep)
 		}
 	}
