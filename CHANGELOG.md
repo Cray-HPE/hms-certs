@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2024-11-25
+
+### Changed
+
+- Updated go.mod dependecies
+- Fixed bug to prevent 2nd request if 1st request's context timed out or canceled
+
 ## [1.4.0] - 2022-06-10
 
 ### Changed

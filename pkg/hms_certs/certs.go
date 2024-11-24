@@ -40,7 +40,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 
-	"github.com/Cray-HPE/hms-base"
+	"github.com/Cray-HPE/hms-base/v2"
 	sstorage "github.com/Cray-HPE/hms-securestorage"
 	"github.com/sirupsen/logrus"
 	"github.com/hashicorp/go-retryablehttp"

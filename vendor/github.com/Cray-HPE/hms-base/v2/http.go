@@ -31,8 +31,8 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"io/ioutil"
 	"net/http"
-	"time"
 	"os"
+	"time"
 )
 
 // Package to slightly abstract some of the most mundane of HTTP interactions. Primary intention is as a JSON
@@ -53,30 +53,30 @@ type HTTPRequest struct {
 
 const USERAGENT = "User-Agent"
 
-func GetServiceInstanceName() (string,error) {
+func GetServiceInstanceName() (string, error) {
 	return os.Hostname()
 }
 
 func SetHTTPUserAgent(req *http.Request, instName string) {
-	if (req == nil) {
+	if req == nil {
 		return
 	}
 
 	//See if this User Agent is already in place
 
 	found := false
-	_,ok := req.Header[USERAGENT]
+	_, ok := req.Header[USERAGENT]
 
-	if (ok) {
-		for _,v := range(req.Header[USERAGENT]) {
-			if (v == instName) {
+	if ok {
+		for _, v := range req.Header[USERAGENT] {
+			if v == instName {
 				found = true
 				break
 			}
 		}
 	}
 
-	if (!found) {
+	if !found {
 		req.Header.Add(USERAGENT, instName)
 	}
 }
