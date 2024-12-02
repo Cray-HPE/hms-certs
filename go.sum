@@ -2,10 +2,8 @@ cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Cray-HPE/hms-base v1.15.0 h1:VaQj6cY9OAs6rcD1miE133eqQnRTkEcX1lnwJA/SUuU=
 github.com/Cray-HPE/hms-base v1.15.0/go.mod h1:+G8KFLPtanLC5lQ602hrf3MDfLTmIXedTavVCOdz5XA=
-github.com/Cray-HPE/hms-securestorage v1.12.2 h1:H5n0i6ldzewd5p7PI2Hktr/+9cYfSCui+0367p2L6n8=
-github.com/Cray-HPE/hms-securestorage v1.12.2/go.mod h1:P4CMKqQVlx/lv+AdyEjNQubZw2FKNyo/IAtFNgQ3VuI=
-github.com/Cray-HPE/hms-securestorage v1.13.0 h1:ut6z9TMtCzL902f9NPxcbtkkDuk9zbX6E30pP8j3k6Q=
-github.com/Cray-HPE/hms-securestorage v1.13.0/go.mod h1:P4CMKqQVlx/lv+AdyEjNQubZw2FKNyo/IAtFNgQ3VuI=
+github.com/Cray-HPE/hms-securestorage v1.14.0 h1:9s9eoUM6HYwOms16CK9hHBxk9Sr1RM+MmYpIKvzsyR8=
+github.com/Cray-HPE/hms-securestorage v1.14.0/go.mod h1:izwfNP4T+AATt+XRfv4i9QjODL5Adpb/0nvby6YxBww=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmVTwzkszR9V5SSuryQ31EELlFMUz1kKyl939pY=
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
