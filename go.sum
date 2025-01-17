@@ -1,5 +1,5 @@
-github.com/Cray-HPE/hms-base/v2 v2.1.1-0.20250115145051-38c3b67dad0b h1:hEPcKGWf5p/tpPLJxCWxAxv/EOTF2iKZJm/9jATABmk=
-github.com/Cray-HPE/hms-base/v2 v2.1.1-0.20250115145051-38c3b67dad0b/go.mod h1:ljyY+aRYOzYJsSYfo7I9umGMLmowLgTqtxbmruTlsEo=
+github.com/Cray-HPE/hms-base/v2 v2.2.0 h1:UIC5edpFL4kg9RrUCAZzqz7nhXyR12b4s8ks4NqdxqA=
+github.com/Cray-HPE/hms-base/v2 v2.2.0/go.mod h1:ljyY+aRYOzYJsSYfo7I9umGMLmowLgTqtxbmruTlsEo=
 github.com/Cray-HPE/hms-securestorage v1.14.1-0.20250115175048-ad0146cc43f6 h1:8n1HiJkXIORDhOJ7xzcQN+n4gO7PKLBR57Y+bVzODKs=
 github.com/Cray-HPE/hms-securestorage v1.14.1-0.20250115175048-ad0146cc43f6/go.mod h1:RfFO+NegbsDPT44o3921kKsWhA7fuQ1vbw6CaCHWuFA=
 github.com/Cray-HPE/hms-xname v1.4.0 h1:i47YmE8rbSfJ64simKCCC6ZVcGid3rDIX6/jfVbISAM=
