@@ -1,17 +1,17 @@
 // MIT License
-// 
-// (C) Copyright [2020-2022] Hewlett Packard Enterprise Development LP
-// 
+//
+// (C) Copyright [2020-2022,2025] Hewlett Packard Enterprise Development LP
+//
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
 // to deal in the Software without restriction, including without limitation
 // the rights to use, copy, modify, merge, publish, distribute, sublicense,
 // and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included
 // in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
@@ -20,36 +20,32 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
-
 package hms_certs
 
-
-
 import (
-	"fmt"
-	"net/http"
-	"net/url"
-	"io"
-	"io/ioutil"
-	"os"
-	"path"
-	"strings"
-	"strconv"
 	"bytes"
-	"time"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
+	"strconv"
+	"strings"
+	"time"
 
-	"github.com/Cray-HPE/hms-base"
+	base "github.com/Cray-HPE/hms-base/v2"
 	sstorage "github.com/Cray-HPE/hms-securestorage"
-	"github.com/sirupsen/logrus"
+	"github.com/Cray-HPE/hms-xname/xnametypes"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/sirupsen/logrus"
 )
-
 
 // This package provides a means to create TLS cert/key pairs as well as
 // to fetch the CA bundle/chain.    See README.md for more info.
-
 
 // Used for authentication in k8s, to get to the vault data
 
@@ -460,7 +456,7 @@ func checkDomainTargs(endpoints []string, domain string, sep string) (string,err
 		//There can be -xxx annotations in some cases, e.g. x0m0-rts, so strip
 		//off anything with a dash.
 		dtoks := strings.Split(ttoks[0],"-")
-		if (base.VerifyNormalizeCompID(dtoks[0]) == "") {
+		if (xnametypes.VerifyNormalizeCompID(dtoks[0]) == "") {
 			return "",fmt.Errorf("ERROR, endpoint not a valid XName: %s (%s)",
 				ttoks[0],endpoints[ix])
 		}
