@@ -1,7 +1,7 @@
 # github.com/Cray-HPE/hms-base/v2 v2.2.0
 ## explicit; go 1.23
 github.com/Cray-HPE/hms-base/v2
-# github.com/Cray-HPE/hms-securestorage v1.15.1-0.20250228182205-e1438108d43c
+# github.com/Cray-HPE/hms-securestorage v1.16.0
 ## explicit; go 1.23.0
 github.com/Cray-HPE/hms-securestorage
 # github.com/Cray-HPE/hms-xname v1.4.0
@@ -73,8 +73,8 @@ github.com/sirupsen/logrus
 # golang.org/x/crypto v0.35.0
 ## explicit; go 1.23.0
 golang.org/x/crypto/pbkdf2
-# golang.org/x/net v0.35.0
-## explicit; go 1.18
+# golang.org/x/net v0.36.0
+## explicit; go 1.23.0
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
