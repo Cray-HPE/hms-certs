@@ -188,11 +188,6 @@ func (request *HTTPRequest) DoHTTPAction() (payloadBytes []byte, err error) {
 		return
 	}
 
-	err = resp.Body.Close()
-	if err != nil {
-		return
-	}
-
 	return
 }
 

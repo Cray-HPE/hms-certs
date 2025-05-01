@@ -1,7 +1,7 @@
-github.com/Cray-HPE/hms-base/v2 v2.2.1-0.20250414152022-3ab999198b9c h1:z/4etf7PvM5MIwKstKVRx1uV8SodFiivRlXUZYSgGT4=
-github.com/Cray-HPE/hms-base/v2 v2.2.1-0.20250414152022-3ab999198b9c/go.mod h1:vE93SJ+Dptk1Y5+C/DKJPt/tjCZs3HzZUbZaEnfgnug=
-github.com/Cray-HPE/hms-securestorage v1.16.0 h1:WCK4gWvgJqiUzDRQl5TEezVTvorTsd2K7kxyIn+ZLIk=
-github.com/Cray-HPE/hms-securestorage v1.16.0/go.mod h1:N8rXzrA44XszKAqhWeFAU3j2/nU6Cz1a5tuF3hm6Vbw=
+github.com/Cray-HPE/hms-base/v2 v2.3.0 h1:BjUWnxHplxg+YqjHaEcFH6TvsFb6cqYN3WI2JA6KNTo=
+github.com/Cray-HPE/hms-base/v2 v2.3.0/go.mod h1:vE93SJ+Dptk1Y5+C/DKJPt/tjCZs3HzZUbZaEnfgnug=
+github.com/Cray-HPE/hms-securestorage v1.17.0 h1:9Dr96LITvt9hqs+/CIDFNOauUPSTobU8TC3jEfd8I/A=
+github.com/Cray-HPE/hms-securestorage v1.17.0/go.mod h1:XYnykBCkkdWCLsMNjoMNmYfFn9UDFc02UN16k8ZHktE=
 github.com/Cray-HPE/hms-xname v1.4.0 h1:i47YmE8rbSfJ64simKCCC6ZVcGid3rDIX6/jfVbISAM=
 github.com/Cray-HPE/hms-xname v1.4.0/go.mod h1:wH7t1UXYck0VdHSWjrMsxZmaCK5W1lmwgNnsYAFPTus=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=

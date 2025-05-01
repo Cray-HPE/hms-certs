@@ -3,8 +3,8 @@ module github.com/Cray-HPE/hms-certs
 go 1.24.0
 
 require (
-	github.com/Cray-HPE/hms-base/v2 v2.2.1-0.20250414152022-3ab999198b9c
-	github.com/Cray-HPE/hms-securestorage v1.16.0
+	github.com/Cray-HPE/hms-base/v2 v2.3.0
+	github.com/Cray-HPE/hms-securestorage v1.17.0
 	github.com/Cray-HPE/hms-xname v1.4.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/sirupsen/logrus v1.9.3
